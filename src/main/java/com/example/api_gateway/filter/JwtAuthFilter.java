@@ -64,6 +64,19 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             }
         }
 
+        // 4️⃣ Role-based restriction: PROJECT SERVICE → ADMIN or HR only
+        if (path.startsWith("/project-service")) {
+
+            List<String> roles = jwtUtil.getRoles(token);
+
+            if (roles == null ||
+                    (!roles.contains("ADMIN") && !roles.contains("HR"))) {
+
+                exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                return exchange.getResponse().setComplete();
+            }
+        }
+
         // 5️⃣ Forward user info to downstream services
         ServerWebExchange modifiedExchange = exchange.mutate()
                 .request(r -> r
