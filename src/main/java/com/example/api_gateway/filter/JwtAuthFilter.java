@@ -77,6 +77,34 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             }
         }
 
+        if (path.startsWith("/leave-service/leaves")) {
+
+            List<String> roles = jwtUtil.getRoles(token);
+
+            // EMPLOYEE APIs
+            if (
+                    (path.equals("/leave-service/leaves") && method == HttpMethod.POST) ||
+                            (path.equals("/leave-service/leaves/my") && method == HttpMethod.GET)
+            ) {
+                if (!roles.contains("EMPLOYEE")) {
+                    exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                    return exchange.getResponse().setComplete();
+                }
+            }
+
+            // ADMIN / HR APIs
+            if (
+                    (path.equals("/leave-service/leaves") && method == HttpMethod.GET) ||
+                            path.contains("/approve") ||
+                            path.contains("/reject")
+            ) {
+                if (!roles.contains("ADMIN") && !roles.contains("HR")) {
+                    exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                    return exchange.getResponse().setComplete();
+                }
+            }
+        }
+
         // 5️⃣ Forward user info to downstream services
         ServerWebExchange modifiedExchange = exchange.mutate()
                 .request(r -> r
